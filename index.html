@@ -15,7 +15,6 @@
       --bg: #0b0f17;
       --cardRadius: 18px;
       --cardShadow: 0 18px 55px rgba(0,0,0,0.35);
-      --cardBorder: 1px solid rgba(255,255,255,0.10);
 
       /* glass */
       --glass: rgba(255,255,255,0.10);
@@ -49,11 +48,19 @@
 
     .card{
       border-radius: var(--cardRadius);
-      border: var(--cardBorder);
-      background: rgba(255,255,255,0.03);
+
+      /* CHANGED: card background to white */
+      background: #ffffff;
+
+      /* CHANGED: subtle border for white card */
+      border: 1px solid rgba(15, 23, 42, 0.10);
+
       box-shadow: var(--cardShadow);
       overflow:hidden;
       padding: 14px;
+
+      /* CHANGED: text colour inside the card */
+      color: #0f172a;
     }
 
     .slider{
@@ -66,7 +73,7 @@
       height: min(60vh, 520px);
       width: 100%;
       user-select: none;
-      touch-action: none; /* we handle dragging */
+      touch-action: none;
     }
 
     .imgLayer{
@@ -84,13 +91,11 @@
       pointer-events: none;
     }
 
-    /* Top image is clipped based on slider value */
     .afterLayer{
       clip-path: inset(0 calc(100% - var(--pos)) 0 0);
       will-change: clip-path;
     }
 
-    /* Divider line */
     .divider{
       position:absolute;
       top:0;
@@ -103,7 +108,6 @@
       pointer-events:none;
     }
 
-    /* Handle button (circle with arrows) */
     .handle{
       position:absolute;
       top: 50%;
@@ -134,7 +138,6 @@
       filter: drop-shadow(0 2px 10px rgba(0,0,0,0.35));
     }
 
-    /* Labels */
     .label{
       position:absolute;
       bottom: 12px;
@@ -150,11 +153,11 @@
       letter-spacing: 0.10em;
       text-transform: uppercase;
       font-size: 14px;
+      color: rgba(255,255,255,0.95);
     }
     .label.before{ left: 12px; }
     .label.after{ right: 12px; }
 
-    /* Hidden but accessible instructions */
     .srOnly{
       position:absolute;
       width:1px;
@@ -167,138 +170,6 @@
       border:0;
     }
 
-    /* Mobile tweaks */
     @media (max-width: 520px){
       body{ padding: 16px; }
       .card{ padding: 12px; }
-      .slider{ height: min(62vh, 440px); min-height: 260px; }
-      .handle{ width: 52px; height: 52px; }
-      .label{ font-size: 13px; padding: 7px 10px; }
-    }
-
-    @media (prefers-reduced-motion: reduce){
-      .afterLayer{ will-change: auto; }
-    }
-  </style>
-</head>
-
-<body>
-  <div class="wrap">
-    <div class="card">
-      <div
-        class="slider"
-        id="slider"
-        role="group"
-        aria-label="Before and after image comparison slider"
-        style="--pos: 50%;"
-      >
-        <p class="srOnly" id="instructions">
-          Drag the handle left or right to compare the before and after images.
-          You can also use the left and right arrow keys when the handle is focused.
-        </p>
-
-        <!-- BEFORE image (base) -->
-        <div class="imgLayer beforeLayer" aria-hidden="true">
-          <img
-            src="https://images.unsplash.com/photo-1523413651479-597eb2da0ad6?auto=format&fit=crop&w=1600&q=80"
-            alt=""
-          />
-        </div>
-
-        <!-- AFTER image (clipped layer) -->
-        <div class="imgLayer afterLayer" aria-hidden="true">
-          <img
-            src="https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1600&q=80"
-            alt=""
-          />
-        </div>
-
-        <div class="divider" aria-hidden="true"></div>
-
-        <!-- Handle (keyboard + drag) -->
-        <button
-          class="handle"
-          id="handle"
-          type="button"
-          aria-describedby="instructions"
-          aria-label="Image comparison handle"
-        >
-          <!-- left-right arrows icon -->
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M10 7L6 12l4 5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M14 7l4 5-4 5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-
-        <div class="label before" aria-hidden="true">BEFORE</div>
-        <div class="label after" aria-hidden="true">AFTER</div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const slider = document.getElementById("slider");
-    const handle = document.getElementById("handle");
-
-    let dragging = false;
-
-    function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
-
-    function setPosFromClientX(clientX){
-      const rect = slider.getBoundingClientRect();
-      const x = clamp(clientX - rect.left, 0, rect.width);
-      const pct = (x / rect.width) * 100;
-      slider.style.setProperty("--pos", pct.toFixed(2) + "%");
-      // Update aria value for assistive tech (optional)
-      handle.setAttribute("aria-valuetext", `Position ${Math.round(pct)} percent`);
-    }
-
-    // Pointer events for mouse + touch
-    slider.addEventListener("pointerdown", (e) => {
-      // allow clicking anywhere to move handle
-      dragging = true;
-      slider.setPointerCapture(e.pointerId);
-      setPosFromClientX(e.clientX);
-      handle.focus({ preventScroll: true });
-    });
-
-    slider.addEventListener("pointermove", (e) => {
-      if(!dragging) return;
-      setPosFromClientX(e.clientX);
-    });
-
-    slider.addEventListener("pointerup", (e) => {
-      dragging = false;
-      try { slider.releasePointerCapture(e.pointerId); } catch {}
-    });
-
-    slider.addEventListener("pointercancel", () => { dragging = false; });
-
-    // Keyboard support: focus handle then use arrows
-    handle.addEventListener("keydown", (e) => {
-      const step = e.shiftKey ? 10 : 2; // % step
-      const current = parseFloat(getComputedStyle(slider).getPropertyValue("--pos")) || 50;
-
-      if(e.key === "ArrowLeft"){
-        e.preventDefault();
-        slider.style.setProperty("--pos", clamp(current - step, 0, 100) + "%");
-      }
-      if(e.key === "ArrowRight"){
-        e.preventDefault();
-        slider.style.setProperty("--pos", clamp(current + step, 0, 100) + "%");
-      }
-      if(e.key === "Home"){
-        e.preventDefault();
-        slider.style.setProperty("--pos", "0%");
-      }
-      if(e.key === "End"){
-        e.preventDefault();
-        slider.style.setProperty("--pos", "100%");
-      }
-    });
-
-    // Prevent the button itself from triggering click “press” behaviour
-    handle.addEventListener("click", (e) => e.preventDefault());
-  </script>
-</body>
-</html>
